@@ -1,7 +1,10 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true
+  output: 'export',
+  basePath: '/geeks-shop',
+  images: { unoptimized: true },
+  reactStrictMode: true,
 };
 
 export default nextConfig;
