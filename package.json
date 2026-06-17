@@ -1,0 +1,34 @@
+{
+  "name": "geeks-shop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test:e2e": "playwright test",
+    "test:smoke": "playwright test tests/smoke",
+    "test:navigation": "playwright test tests/navigation",
+    "test:content": "playwright test tests/content",
+    "test:api": "playwright test tests/api",
+    "test:a11y": "playwright test tests/a11y",
+    "test:visual": "playwright test tests/visual",
+    "test:shadow-dom": "playwright test tests/shadow-dom",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug"
+  },
+  "dependencies": {
+    "next": "15.3.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "axe-playwright": "^1.2.3",
+    "typescript": "^5"
+  }
+}
