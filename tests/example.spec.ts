@@ -70,15 +70,17 @@ test.describe('Example Tests with Custom Fixtures', () => {
   });
 
   test('should monitor console errors', async ({ homePage, testUtils, page }) => {
-    // Start monitoring
-    const logs = testUtils.monitorConsole(page);
+  // Start monitoring console
+  const logs = await testUtils.monitorConsole(page);
 
-    await homePage.goto();
+  // Navigate to page
+  await homePage.goto();
 
-    // Verify no errors in console
-    const errors = logs.filter((log) => log.type === 'error');
-    expect(errors).toHaveLength(0);
-  });
+  // Verify no errors in console
+  const errors = logs.filter((log) => log.type === 'error');
+
+  expect(errors).toHaveLength(0);
+});
 
   test('should test keyboard navigation', async ({ homePage, testUtils, page }) => {
     await homePage.goto();
