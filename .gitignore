@@ -8,3 +8,8 @@ node_modules/
 # Playwright reports
 playwright-report/
 test-results/
+
+# Playwright artifacts
+playwright-report/
+test-results/
+*.webm

@@ -5,7 +5,7 @@
  * defined in fixtures.ts for cleaner, more readable tests.
  */
 
-import { test, expect } from '../fixtures';
+import { test, expect } from './fixtures';
 
 test.describe('Example Tests with Custom Fixtures', () => {
   test('should load home page using fixture', async ({ homePage }) => {
