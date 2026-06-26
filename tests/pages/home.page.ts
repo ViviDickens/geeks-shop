@@ -12,13 +12,13 @@ export class HomePage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.heroSection = page.locator('section').filter({ has: page.getByText(/level up/i) });
-    this.heroTitle = page.getByText(/level up your life/i);
-    this.heroSubtitle = page.getByText(/gaming gear, anime collectibles/i);
-    this.shopNowButton = page.getByRole('button', { name: /shop now/i });
-    this.gamingGearButton = page.getByRole('button', { name: /gaming gear/i });
-    this.featuredDropsSection = page.locator('section').filter({ has: page.getByText(/featured drops/i) });
-    this.productCards = page.locator('[data-testid="product-card"]');
+    this.heroSection = page.getByTestId('hero');
+    this.heroTitle = page.getByTestId('hero-title');
+    this.heroSubtitle = page.getByTestId('hero-subtitle');
+    this.shopNowButton = page.getByTestId('hero-cta-primary');
+    this.gamingGearButton = page.getByTestId('hero-cta-secondary');
+    this.featuredDropsSection = page.getByTestId('featured-section');
+    this.productCards = page.getByTestId('product-card');
   }
 
   async goto() {

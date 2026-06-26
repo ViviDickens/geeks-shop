@@ -43,9 +43,9 @@ test.beforeEach(async ({ page }) => {
     height: 720,
   });
 
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
+  await page.addInitScript(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 });
 

@@ -13,18 +13,20 @@ export class ProductsPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.productGrid = page.locator('[data-testid="product-grid"]');
-    this.productCards = page.locator('[data-testid="product-card"]');
-    this.productTitle = page.locator('[data-testid="product-title"]');
-    this.productPrice = page.locator('[data-testid="product-price"]');
-    this.productImage = page.locator('[data-testid="product-image"]');
-    this.addToCartButton = page.getByRole('button', { name: /add to cart/i });
+    this.productGrid = page.getByTestId('catalog-title');
+    this.productCards = page.locator('[data-testid^="product-card-"]');
+    this.productTitle = page.locator('[data-testid^="product-card-"]');
+    this.productPrice = page.locator('[data-testid*="price"]');
+    this.productImage = page.locator('img');
+    this.addToCartButton = page.getByTestId('add-to-cart-btn');
     this.filterButton = page.getByRole('button', { name: /filter/i });
     this.sortDropdown = page.locator('[data-testid="sort-select"]');
   }
 
   async goto() {
-    await super.goto('/products');
+    await super.goto('/');
+    await this.page.getByTestId('nav-catalog').click();
+    await this.page.getByTestId('catalog-title').waitFor({ state: 'visible' });
   }
 
   async getProductCount(): Promise<number> {

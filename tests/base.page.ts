@@ -13,7 +13,7 @@ export class BasePage {
 
   constructor(page: Page) {
     this.page = page;
-    this.logo = page.locator('[data-testid="logo"]');
+    this.logo = page.getByTestId('navbar').getByText(/geekstore/i);
     this.homeLink = page.getByRole('link', { name: /home/i });
     this.catalogLink = page.getByRole('link', { name: /catalog/i });
     this.loginButton = page.getByRole('button', { name: /login/i });

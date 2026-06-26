@@ -14,12 +14,12 @@ export class CartPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.cartContainer = page.locator('[data-testid="cart-container"]');
-    this.cartItems = page.locator('[data-testid="cart-item"]');
-    this.emptyMessage = page.getByText(/your cart is empty/i);
-    this.cartTotal = page.locator('[data-testid="cart-total"]');
+    this.cartContainer = page.getByTestId('cart-title');
+    this.cartItems = page.locator('[data-testid^="cart-item-name-"]');
+    this.emptyMessage = page.getByText(/empty|cart is empty|browse catalog/i);
+    this.cartTotal = page.locator('[data-testid="cart-total"], [data-testid="cart-summary-total"]');
     this.checkoutButton = page.getByRole('button', { name: /checkout/i });
-    this.continueShoppingButton = page.getByRole('button', { name: /continue shopping/i });
+    this.continueShoppingButton = page.getByRole('link', { name: /browse catalog|continue shopping/i });
     this.removeButton = page.getByRole('button', { name: /remove/i });
     this.quantityInput = page.locator('[data-testid="quantity-input"]');
     this.itemPrice = page.locator('[data-testid="item-price"]');
