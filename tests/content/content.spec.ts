@@ -19,10 +19,10 @@ test.describe('Content Tests - Text & Image Rendering', () => {
 
   test('should render hero section content on home page', async () => {
     await homePage.goto();
-    
+
     const title = await homePage.getHeroTitle();
     const subtitle = await homePage.getHeroSubtitle();
-    
+
     expect(title).toContain('LEVEL UP YOUR LIFE');
     expect(subtitle).toContain('gaming gear');
   });
