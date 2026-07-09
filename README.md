@@ -1,6 +1,6 @@
 # vivi-test-site 🛒
 
-> A production-grade Next.js e-commerce site built as a controlled test environment for the [`charles-dickens-museum`](https://github.com/ViviDickens/charles-dickens-museum) Playwright E2E test suite.
+> A production-grade Next.js e-commerce site built as a controlled test environment for Playwright E2E test suite.
 
 ## Why this exists
 
