@@ -1,5 +1,5 @@
 import { Page, Locator } from '@playwright/test';
-import { BasePage } from '../base.page';
+import { BasePage } from './base.page';
 
 export class CartPage extends BasePage {
   readonly cartContainer: Locator;
@@ -14,15 +14,15 @@ export class CartPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.cartContainer = page.getByTestId('cart-title');
+    this.cartContainer = page.locator('[data-testid="cart-empty"], [data-testid="cart-items"]').first();
     this.cartItems = page.locator('[data-testid^="cart-item-name-"]');
-    this.emptyMessage = page.getByText(/empty|cart is empty|browse catalog/i);
+    this.emptyMessage = page.getByTestId('cart-empty');
     this.cartTotal = page.locator('[data-testid="cart-total"], [data-testid="cart-summary-total"]');
     this.checkoutButton = page.getByRole('button', { name: /checkout/i });
     this.continueShoppingButton = page.getByRole('link', { name: /browse catalog|continue shopping/i });
-    this.removeButton = page.getByRole('button', { name: /remove/i });
-    this.quantityInput = page.locator('[data-testid="quantity-input"]');
-    this.itemPrice = page.locator('[data-testid="item-price"]');
+    this.removeButton = page.locator('[data-testid^="cart-remove-"]');
+    this.quantityInput = page.locator('[data-testid^="cart-qty-"]');
+    this.itemPrice = page.locator('[data-testid^="cart-item-price-"]');
   }
 
   async goto() {
@@ -56,12 +56,24 @@ export class CartPage extends BasePage {
   }
 
   async updateQuantityByIndex(index: number, quantity: number) {
-    const inputs = await this.quantityInput.all();
-    if (inputs.length > index) {
-      await inputs[index].fill(quantity.toString());
-    }
-  }
+  const qtyDisplays = await this.quantityInput.all();
+  if (qtyDisplays.length <= index) return;
 
+  const currentText = await qtyDisplays[index].textContent();
+  let current = Number(currentText?.trim() ?? '0');
+
+  const increaseButtons = await this.page.locator('[data-testid^="cart-increase-"]').all();
+  const decreaseButtons = await this.page.locator('[data-testid^="cart-decrease-"]').all();
+
+  while (current < quantity) {
+    await increaseButtons[index].click();
+    current++;
+  }
+  while (current > quantity) {
+    await decreaseButtons[index].click();
+    current--;
+  }
+}
   async checkout() {
     await this.checkoutButton.click();
   }
