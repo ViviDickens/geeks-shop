@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [24.x]
         browser: [chromium, firefox, webkit]
 
     steps:
@@ -86,8 +86,8 @@ jobs:
             ## Playwright Test Results - ${{ matrix.browser }}
             
             - **Total Tests**: ${totalTests}
-            - **Passed**: ${passed} ✅
-            - **Failed**: ${failed} ❌
+            - **Passed**: ${passed} 
+            - **Failed**: ${failed} 
             - **Node Version**: ${{ matrix.node-version }}
             
             [View Detailed Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
