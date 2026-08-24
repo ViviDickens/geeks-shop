@@ -4,29 +4,24 @@ import { BasePage } from './base.page';
 export class ProductsPage extends BasePage {
   readonly productGrid: Locator;
   readonly productCards: Locator;
-  readonly productTitle: Locator;
-  readonly productPrice: Locator;
-  readonly productImage: Locator;
-  readonly addToCartButton: Locator;
-  readonly filterButton: Locator;
+  readonly filterAllButton: Locator;
   readonly sortDropdown: Locator;
+  readonly searchInput: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.productGrid = page.getByTestId('catalog-title');
+    // The actual product grid container is "products-grid", not the page heading.
+    this.productGrid = page.getByTestId('products-grid');
     this.productCards = page.locator('[data-testid^="product-card-"]');
-    this.productTitle = page.locator('[data-testid^="product-card-"]');
-    this.productPrice = page.locator('[data-testid*="price"]');
-    this.productImage = page.locator('img');
-    this.addToCartButton = page.getByTestId('add-to-cart-btn');
-    this.filterButton = page.getByRole('button', { name: /filter/i });
-    this.sortDropdown = page.locator('[data-testid="sort-select"]');
+    this.filterAllButton = page.getByTestId('filter-all');
+    this.sortDropdown = page.getByTestId('sort-select');
+    this.searchInput = page.getByTestId('search-input');
   }
 
   async goto() {
-    await super.goto('/');
-    await this.page.getByTestId('nav-catalog').click();
-    await this.page.getByTestId('catalog-title').waitFor({ state: 'visible' });
+    // /products is a real route with its own URL — no need to detour through
+    // the home page and click through the nav link to get here.
+    await super.goto('/products');
   }
 
   async getProductCount(): Promise<number> {
@@ -40,29 +35,32 @@ export class ProductsPage extends BasePage {
   async clickProductByIndex(index: number) {
     const product = await this.getProductByIndex(index);
     await product.click();
-  }
-
-  async addToCartByIndex(index: number) {
-    const buttons = await this.addToCartButton.all();
-    if (buttons.length > index) {
-      await buttons[index].click();
-    }
+    // Product cards navigate client-side, so wait for the URL to land on
+    // /products/{id} before the caller asserts anything about the new page.
+    await this.page.waitForURL(/\/products\/[^/]+\/?$/);
   }
 
   async getProductTitleByIndex(index: number): Promise<string | null> {
     const product = await this.getProductByIndex(index);
-    const titleLocator = product.locator('[data-testid="product-title"]');
+    // ProductCard.tsx uses "product-name-{id}", not a plain "product-title".
+    const titleLocator = product.locator('[data-testid^="product-name-"]');
     return await titleLocator.textContent();
   }
 
   async getProductPriceByIndex(index: number): Promise<string | null> {
     const product = await this.getProductByIndex(index);
-    const priceLocator = product.locator('[data-testid="product-price"]');
+    // ProductCard.tsx uses "product-price-{id}", not a plain "product-price".
+    const priceLocator = product.locator('[data-testid^="product-price-"]');
     return await priceLocator.textContent();
   }
 
   async isProductGridVisible(): Promise<boolean> {
-    return await this.productGrid.isVisible();
+    // Same reasoning as CartPage.isCartEmpty(): isVisible() alone checks once,
+    // immediately, and doesn't wait for the grid to actually render.
+    return await this.productGrid
+      .waitFor({ state: 'visible', timeout: 10000 })
+      .then(() => true)
+      .catch(() => false);
   }
 
   async waitForProductsToLoad() {
@@ -71,5 +69,17 @@ export class ProductsPage extends BasePage {
 
   async sortBy(option: string) {
     await this.sortDropdown.selectOption(option);
+  }
+
+  async filterByCategory(category: string) {
+    if (category === 'all') {
+      await this.filterAllButton.click();
+    } else {
+      await this.page.getByTestId(`filter-${category}`).click();
+    }
+  }
+
+  async search(query: string) {
+    await this.searchInput.fill(query);
   }
 }

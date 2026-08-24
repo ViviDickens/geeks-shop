@@ -5,6 +5,7 @@ export class HomePage extends BasePage {
   readonly heroSection: Locator;
   readonly heroTitle: Locator;
   readonly heroSubtitle: Locator;
+  readonly heroDescription: Locator;
   readonly shopNowButton: Locator;
   readonly gamingGearButton: Locator;
   readonly featuredDropsSection: Locator;
@@ -15,10 +16,13 @@ export class HomePage extends BasePage {
     this.heroSection = page.getByTestId('hero');
     this.heroTitle = page.getByTestId('hero-title');
     this.heroSubtitle = page.getByTestId('hero-subtitle');
+    this.heroDescription = page.getByTestId('hero-description');
     this.shopNowButton = page.getByTestId('hero-cta-primary');
     this.gamingGearButton = page.getByTestId('hero-cta-secondary');
     this.featuredDropsSection = page.getByTestId('featured-section');
-    this.productCards = page.getByTestId('product-card');
+    // Product cards on the home page all share the "product-card-{id}" testid pattern,
+    // scoped to the featured section so we don't accidentally match anything else.
+    this.productCards = this.featuredDropsSection.locator('[data-testid^="product-card-"]');
   }
 
   async goto() {
@@ -27,10 +31,14 @@ export class HomePage extends BasePage {
 
   async clickShopNow() {
     await this.shopNowButton.click();
+    // Client-side <Link> navigation — wait for the URL to actually update
+    // before any assertion runs, same reasoning as BasePage's click methods.
+    await this.page.waitForURL('/products');
   }
 
   async clickGamingGear() {
     await this.gamingGearButton.click();
+    await this.page.waitForURL('**/products?category=gaming');
   }
 
   async getVisibleProductCount(): Promise<number> {
@@ -43,6 +51,10 @@ export class HomePage extends BasePage {
 
   async getHeroSubtitle(): Promise<string | null> {
     return await this.heroSubtitle.textContent();
+  }
+
+  async getHeroDescription(): Promise<string | null> {
+    return await this.heroDescription.textContent();
   }
 
   async isHeroSectionVisible(): Promise<boolean> {

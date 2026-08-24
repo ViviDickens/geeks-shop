@@ -6,25 +6,26 @@ export class ProductDetailPage extends BasePage {
   readonly productPrice: Locator;
   readonly productDescription: Locator;
   readonly productImage: Locator;
-  readonly quantityInput: Locator;
+  readonly quantityValue: Locator;
   readonly addToCartButton: Locator;
   readonly decreaseButton: Locator;
   readonly increaseButton: Locator;
-  readonly backButton: Locator;
-  readonly relatedProducts: Locator;
+  readonly backLink: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.productName = page.locator('[data-testid="product-name"]');
-    this.productPrice = page.locator('[data-testid="product-price"]');
-    this.productDescription = page.locator('[data-testid="product-description"]');
-    this.productImage = page.locator('[data-testid="product-image"]');
-    this.quantityInput = page.locator('[data-testid="quantity-input"]');
-    this.addToCartButton = page.getByRole('button', { name: /add to cart/i });
-    this.decreaseButton = page.getByRole('button', { name: /decrease/i });
-    this.increaseButton = page.getByRole('button', { name: /increase/i });
-    this.backButton = page.getByRole('button', { name: /back/i });
-    this.relatedProducts = page.locator('[data-testid="related-products"]');
+    // ProductDetailClient.tsx uses the "product-detail-*" prefix for every testid here
+    this.productName = page.getByTestId('product-detail-name');
+    this.productPrice = page.getByTestId('product-detail-price');
+    this.productDescription = page.getByTestId('product-detail-description');
+    this.productImage = page.getByTestId('product-detail-image');
+    // No fillable input exists — quantity is a read-only span plus +/- buttons
+    this.quantityValue = page.getByTestId('qty-value');
+    this.addToCartButton = page.getByTestId('add-to-cart-btn');
+    this.decreaseButton = page.getByTestId('qty-decrease');
+    this.increaseButton = page.getByTestId('qty-increase');
+    // The "back" control is a plain <Link>, not a <button>
+    this.backLink = page.getByRole('link', { name: /back to catalog/i });
   }
 
   async goto(productId: string) {
@@ -51,12 +52,21 @@ export class ProductDetailPage extends BasePage {
     await this.decreaseButton.click();
   }
 
-  async setQuantity(qty: number) {
-    await this.quantityInput.fill(qty.toString());
+  async getQuantity(): Promise<number> {
+    const text = await this.quantityValue.textContent();
+    return Number(text?.trim() ?? '0');
   }
 
-  async getQuantity(): Promise<string> {
-    return await this.quantityInput.inputValue();
+  async setQuantity(qty: number) {
+    let current = await this.getQuantity();
+    while (current < qty) {
+      await this.increaseQuantity();
+      current++;
+    }
+    while (current > qty) {
+      await this.decreaseQuantity();
+      current--;
+    }
   }
 
   async addToCart() {
@@ -64,11 +74,7 @@ export class ProductDetailPage extends BasePage {
   }
 
   async clickBack() {
-    await this.backButton.click();
-  }
-
-  async isRelatedProductsVisible(): Promise<boolean> {
-    return await this.relatedProducts.isVisible({ timeout: 5000 }).catch(() => false);
+    await this.backLink.click();
   }
 
   async waitForPageLoad() {

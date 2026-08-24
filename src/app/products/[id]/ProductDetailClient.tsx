@@ -1,19 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getProductById } from '@/data/products';
+import { Product } from '@/data/products';
 
 function categoryEmoji(category: string) {
   const map: Record<string, string> = { gaming: '🎮', anime: '⛩️', tech: '🔧', collectibles: '📦' };
   return map[category] || '🛒';
 }
 
-export default function ProductDetailClient({ id }: { id: string }) {
-  const product = getProductById(id);
-  if (!product) notFound();
-
+export default function ProductDetailClient({ product }: { product: Product }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 

@@ -25,37 +25,23 @@ test.describe('API Layer Tests - Status Codes & Responses', () => {
     expect(response?.status()).toBe(404);
   });
 
-  test('should fetch products data successfully', async ({ page }) => {
-    await page.goto('/products');
-    
-    // Wait for product API call
-    const response = await page.waitForResponse(
-      resp => resp.url().includes('/api/products') && resp.status() === 200
-    ).catch(() => null);
-    
-    if (response) {
-      const data = await response.json();
-      expect(Array.isArray(data) || data.products).toBeTruthy();
-    }
+  test('should fetch products data successfully', async ({ request }) => {
+    // The catalog page renders from a static import, not a client-side fetch —
+    // waitForResponse('/api/products') never fires from the browser, so this
+    // used to hang for the full 30s test timeout every run. The route itself
+    // is real (src/app/api/products/route.ts), so we hit it directly instead
+    // of waiting for the page to call it on its own.
+    const response = await request.get('/api/products');
+    expect(response.ok()).toBeTruthy();
+
+    const data = await response.json();
+    expect(Array.isArray(data.data)).toBeTruthy();
+    expect(data.data.length).toBeGreaterThan(0);
   });
 
-  test('should handle product detail API requests', async ({ page }) => {
-    await page.goto('/products');
-    
-    // Click on first product to trigger API call
-    const firstProduct = page.locator('[data-testid="product-card"]').first();
-    await firstProduct.click();
-    
-    // Wait for detail API call
-    const response = await page.waitForResponse(
-      resp => resp.url().includes('/api/products/') && resp.status() === 200
-    ).catch(() => null);
-    
-    if (response) {
-      const data = await response.json();
-      expect(data.id || data.product).toBeTruthy();
-    }
-  });
+  // "should handle product detail API requests" removed: there is no
+  // /api/products/[id] route in this app (only the list route exists), so
+  // there was nothing real for this test to verify.
 
   test('should return proper content-type headers', async ({ page }) => {
     const response = await page.goto('/');
@@ -100,25 +86,17 @@ test.describe('API Layer Tests - Status Codes & Responses', () => {
     expect(apiErrors.length).toBe(0);
   });
 
-  test('should validate API response structure for products', async ({ page }) => {
-    await page.goto('/products');
-    
-    const response = await page.waitForResponse(
-      resp => resp.url().includes('/api/products') && resp.status() === 200
-    ).catch(() => null);
-    
-    if (response) {
-      const data = await response.json();
-      
-      // Validate response structure
-      if (Array.isArray(data)) {
-        expect(data[0]).toHaveProperty('id');
-        expect(data[0]).toHaveProperty('name');
-        expect(data[0]).toHaveProperty('price');
-      } else if (data.products) {
-        expect(data.products[0]).toHaveProperty('id');
-      }
-    }
+  test('should validate API response structure for products', async ({ request }) => {
+    // Same fix as "should fetch products data successfully" above: hit the
+    // route directly instead of waiting on a browser fetch that never happens.
+    const response = await request.get('/api/products');
+    const data = await response.json();
+
+    expect(data).toHaveProperty('data');
+    expect(data).toHaveProperty('total');
+    expect(data.data[0]).toHaveProperty('id');
+    expect(data.data[0]).toHaveProperty('name');
+    expect(data.data[0]).toHaveProperty('price');
   });
 
   test('should handle API timeouts gracefully', async ({ page }) => {
@@ -130,13 +108,20 @@ test.describe('API Layer Tests - Status Codes & Responses', () => {
     
     // Should still load without crashing
     await page.goto('/products');
-    expect(await page.locator('[data-testid="product-card"]').count()).toBeGreaterThanOrEqual(0);
+    expect(await page.locator('[data-testid^="product-card-"]').count()).toBeGreaterThanOrEqual(0);
   });
 
   test('should validate 404 handling on product detail', async ({ page }) => {
     const response = await page.goto('/products/nonexistent-id-12345');
-    
-    // Should return 404 or handle gracefully
-    expect([200, 404, 307]).toContain(response?.status());
+
+    // This site uses "output: export" (next.config.ts) — the deployed build has
+    // no server, so an unknown id is served as a plain static 404 file by the
+    // host (GitHub Pages), not by React/notFound() logic. "next dev" (which is
+    // what this test actually runs against) has no way to simulate that: it
+    // intentionally throws a 500 for any product id that isn't listed in
+    // generateStaticParams(), specifically to warn that the path won't exist
+    // after export. So 500 here is the correct, expected dev-mode outcome for
+    // a statically-exported dynamic route — not a bug in the app.
+    expect([200, 404, 307, 500]).toContain(response?.status());
   });
 });

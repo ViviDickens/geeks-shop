@@ -95,5 +95,5 @@ This repository is part of my QA Automation / SDET portfolio and demonstrates:
 
 ## Author
 
-Viviana Pérez
+Viviana Perez
 SDET | QA Automation Engineer | AI Quality & Security Engineering

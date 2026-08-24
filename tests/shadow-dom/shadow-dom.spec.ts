@@ -37,7 +37,7 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
     
-    const firstCard = page.locator('[data-testid="product-card"]').first();
+    const firstCard = page.locator('[data-testid^="product-card-"]').first();
     
     // Simulate drag start
     await firstCard.dispatchEvent('mousedown');
@@ -52,17 +52,19 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
   test('should handle drag and drop with native drag events', async ({ page }) => {
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
-    
-    const firstCard = page.locator('[data-testid="product-card"]').first();
-    
-    // Dispatch drag events
-    await firstCard.dispatchEvent('dragstart', {
-      dataTransfer: {
-        setData: () => {},
-        effectAllowed: 'move'
-      }
+
+    const firstCard = page.locator('[data-testid^="product-card-"]').first();
+
+    // locator.dispatchEvent() serializes eventInit to send it to the browser,
+    // and a function (setData: () => {}) can't cross that boundary — hence
+    // "Attempting to serialize unexpected value". A real DataTransfer instance
+    // has to be constructed inside the page instead, then dispatched from there.
+    await firstCard.evaluate((el) => {
+      const dataTransfer = new DataTransfer();
+      const event = new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer });
+      el.dispatchEvent(event);
     });
-    
+
     // Should not error
     expect(await firstCard.count()).toBe(1);
   });
@@ -71,7 +73,7 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
     await page.goto('/products');
     
     // Check for regular DOM elements as fallback
-    const regularCards = await page.locator('[data-testid="product-card"]').count();
+    const regularCards = await page.locator('[data-testid^="product-card-"]').count();
     
     // Should have regular DOM elements as fallback
     expect(regularCards).toBeGreaterThan(0);
@@ -81,17 +83,17 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
     
-    const firstCard = page.locator('[data-testid="product-card"]').first();
+    const firstCard = page.locator('[data-testid^="product-card-"]').first();
     
     // Use Playwright's native drag and drop simulation
-    await firstCard.dragTo(page.locator('[data-testid="cart-icon"]'), {
+    await firstCard.dragTo(page.getByTestId('nav-cart'), {
       force: true,
     }).catch(() => {
       // If drag and drop not supported, that's okay - test graceful degradation
     });
     
     // Page should still be functional
-    expect(await page.locator('[data-testid="product-card"]').count()).toBeGreaterThan(0);
+    expect(await page.locator('[data-testid^="product-card-"]').count()).toBeGreaterThan(0);
   });
 
   test('should handle mouse simulation for drag operations', async ({ page }) => {
@@ -99,7 +101,7 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
     
     // Test mouse event dispatch chain
     await page.evaluate(() => {
-      const element = document.querySelector('[data-testid="product-card"]');
+      const element = document.querySelector('[data-testid^="product-card-"]');
       if (element) {
         element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
         element.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
@@ -114,39 +116,46 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
 
   test('should preserve DOM structure after drag operations', async ({ page }) => {
     await page.goto('/products');
-    const initialCount = await page.locator('[data-testid="product-card"]').count();
+    const initialCount = await page.locator('[data-testid^="product-card-"]').count();
     
-    const firstCard = page.locator('[data-testid="product-card"]').first();
+    const firstCard = page.locator('[data-testid^="product-card-"]').first();
     
     // Simulate drag
     await firstCard.hover();
     await page.mouse.move(200, 200);
     
-    const finalCount = await page.locator('[data-testid="product-card"]').count();
+    const finalCount = await page.locator('[data-testid^="product-card-"]').count();
     
     // DOM should not be modified by mouse movement
     expect(initialCount).toBe(finalCount);
   });
 
-  test('should handle touch events for mobile drag', async ({ page }) => {
-    // Set mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/products');
-    await page.waitForLoadState('networkidle');
-    
-    const firstCard = page.locator('[data-testid="product-card"]').first();
-    
-    // Simulate touch drag
-    await firstCard.tap();
-    
-    // Should handle touch without error
-    expect(await firstCard.isVisible()).toBeTruthy();
+  test.describe('touch drag', () => {
+    // locator.tap() requires a browser context created with hasTouch: true —
+    // the default desktop projects in playwright.config.ts don't set that, so
+    // this needs its own context config rather than the file's shared one.
+    test.use({ hasTouch: true });
+
+    test('should handle touch events for mobile drag', async ({ page }) => {
+      // Set mobile viewport
+      await page.setViewportSize({ width: 375, height: 667 });
+      await page.goto('/products');
+      await page.waitForLoadState('networkidle');
+
+      const firstCard = page.locator('[data-testid^="product-card-"]').first();
+
+      // Simulate touch drag
+      await firstCard.tap();
+
+      // Should handle touch without error
+      expect(await firstCard.isVisible()).toBeTruthy();
+    });
   });
 
   test('should support pointerdown/pointerup events for drag', async ({ page }) => {
     await page.goto('/products');
     
-    const firstCard = page.locator('[data-testid="product-card"]').first();
+    const firstCard = page.locator('[data-testid^="product-card-"]').first();
     
     // Dispatch pointer events (modern drag & drop)
     await firstCard.dispatchEvent('pointerdown');
@@ -159,7 +168,7 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
   test('should handle drag cancel operation', async ({ page }) => {
     await page.goto('/products');
     
-    const firstCard = page.locator('[data-testid="product-card"]').first();
+    const firstCard = page.locator('[data-testid^="product-card-"]').first();
     const initialURL = page.url();
     
     // Start drag then cancel
@@ -174,7 +183,7 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
     
-    const firstCard = page.locator('[data-testid="product-card"]').first();
+    const firstCard = page.locator('[data-testid^="product-card-"]').first();
     
     // Rapid drag operations
     for (let i = 0; i < 5; i++) {
@@ -190,7 +199,7 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
     await page.goto('/products');
     
     const draggedElement = await page.evaluate(() => {
-      const element = document.querySelector('[data-testid="product-card"]');
+      const element = document.querySelector('[data-testid^="product-card-"]');
       if (!element) return null;
       
       // Create and dispatch drag event
@@ -203,7 +212,9 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
       return element.getAttribute('data-testid');
     });
     
-    expect(draggedElement).toBe('product-card');
+    // Now that the selector matches "product-card-{id}", the captured attribute
+    // value is the suffixed id, not the literal string "product-card".
+    expect(draggedElement).toMatch(/^product-card-/);
   });
 
   test('should fallback gracefully when Shadow DOM not available', async ({ page }) => {
@@ -215,7 +226,7 @@ test.describe('Shadow DOM & Drag & Drop Tests', () => {
     });
     
     // Should work regardless of Shadow DOM support
-    const productCount = await page.locator('[data-testid="product-card"]').count();
+    const productCount = await page.locator('[data-testid^="product-card-"]').count();
     expect(productCount).toBeGreaterThan(0);
   });
 });

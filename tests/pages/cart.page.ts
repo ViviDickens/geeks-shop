@@ -38,7 +38,15 @@ export class CartPage extends BasePage {
   }
 
   async isCartEmpty(): Promise<boolean> {
-    return await this.emptyMessage.isVisible({ timeout: 3000 }).catch(() => false);
+    // isVisible() checks the DOM once, right now — it does not wait or retry,
+    // even when a timeout is passed. Right after navigation the page can still
+    // be showing "Loading cart..." (pre-hydration), so an instant check catches
+    // it mid-load and wrongly reports "not empty". waitFor() actually polls
+    // until the element shows up (or genuinely times out), which is what we want.
+    return await this.emptyMessage
+      .waitFor({ state: 'visible', timeout: 10000 })
+      .then(() => true)
+      .catch(() => false);
   }
 
   async removeItemByIndex(index: number) {
@@ -56,24 +64,25 @@ export class CartPage extends BasePage {
   }
 
   async updateQuantityByIndex(index: number, quantity: number) {
-  const qtyDisplays = await this.quantityInput.all();
-  if (qtyDisplays.length <= index) return;
+    const qtyDisplays = await this.quantityInput.all();
+    if (qtyDisplays.length <= index) return;
 
-  const currentText = await qtyDisplays[index].textContent();
-  let current = Number(currentText?.trim() ?? '0');
+    const currentText = await qtyDisplays[index].textContent();
+    let current = Number(currentText?.trim() ?? '0');
 
-  const increaseButtons = await this.page.locator('[data-testid^="cart-increase-"]').all();
-  const decreaseButtons = await this.page.locator('[data-testid^="cart-decrease-"]').all();
+    const increaseButtons = await this.page.locator('[data-testid^="cart-increase-"]').all();
+    const decreaseButtons = await this.page.locator('[data-testid^="cart-decrease-"]').all();
 
-  while (current < quantity) {
-    await increaseButtons[index].click();
-    current++;
+    while (current < quantity) {
+      await increaseButtons[index].click();
+      current++;
+    }
+    while (current > quantity) {
+      await decreaseButtons[index].click();
+      current--;
+    }
   }
-  while (current > quantity) {
-    await decreaseButtons[index].click();
-    current--;
-  }
-}
+
   async checkout() {
     await this.checkoutButton.click();
   }

@@ -115,8 +115,12 @@ export class TestUtils {
     sourceSelector: string,
     targetSelector: string
   ) {
-    const source = page.locator(sourceSelector);
-    const target = page.locator(targetSelector);
+    // .first(): callers pass prefix selectors like '[data-testid^="product-card-"]',
+    // which matches every card in the grid (10+). Without narrowing to one
+    // element, .dragTo()/.hover() throw a strict-mode violation instead of
+    // dragging "a" card the way the tests actually intend.
+    const source = page.locator(sourceSelector).first();
+    const target = page.locator(targetSelector).first();
 
     try {
       await source.dragTo(target, { force: true });

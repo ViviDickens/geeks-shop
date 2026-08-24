@@ -127,6 +127,7 @@ export default function Navbar() {
           <Link
             href="/cart"
             data-testid="nav-cart"
+            aria-label="View cart"
             style={{
               position: 'relative',
               color: 'var(--text-primary)',
