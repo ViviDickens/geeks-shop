@@ -84,6 +84,10 @@ src/
 
 For an example of a Playwright suite that tests a real third-party site, see [charles_dickens_museum](https://github.com/ViviDickens/charles_dickens_museum). The two repositories complement each other: `geeks-shop` provides a controlled e-commerce target, while the museum suite demonstrates automation against a live external site.
 
+## Related Playwright Suite
+
+For an example of a Playwright suite that tests a real third-party site, see [charles_dickens_museum](https://github.com/ViviDickens/charles_dickens_museum). The two repositories complement each other: `geeks-shop` provides a controlled e-commerce target, while the museum suite demonstrates automation against a live external site.
+
 ## data-testid Coverage
 
 Every interactive and meaningful element has a `data-testid` attribute for reliable Playwright selectors. No reliance on text content, CSS classes, or brittle XPath.
