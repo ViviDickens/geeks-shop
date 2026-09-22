@@ -1,4 +1,4 @@
-# vivi-test-site
+# geeks-shop
 
 > A production-grade Next.js e-commerce site built as a controlled test environment for Playwright E2E test suite.
 
@@ -79,6 +79,10 @@ src/
     ├── products.ts               # Mock product data
     └── users.ts                  # Mock user data
 ```
+
+## Related Playwright Suite
+
+For an example of a Playwright suite that tests a real third-party site, see [charles_dickens_museum](https://github.com/ViviDickens/charles_dickens_museum). The two repositories complement each other: `geeks-shop` provides a controlled e-commerce target, while the museum suite demonstrates automation against a live external site.
 
 ## data-testid Coverage
 
