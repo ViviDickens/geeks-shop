@@ -57,7 +57,7 @@ The framework uses reusable page objects for the home, catalog, product detail a
 | Smoke | `npm run test:smoke` | Basic application availability and behavior |
 | Navigation | `npm run test:navigation` | Navigation and routing |
 | Content | `npm run test:content` | Rendered content |
-| API / HTTP | `npm run test:api` | HTTP responses and API-oriented checks |
+| API / HTTP | `npm run test:api` | HTTP responses and static catalog contract checks |
 | Accessibility | `npm run test:a11y` | Automated accessibility checks |
 | Visual | `npm run test:visual` | Screenshot comparisons |
 | Shadow DOM | `npm run test:shadow-dom` | Shadow DOM-oriented scenarios |
@@ -108,7 +108,7 @@ The production build exports static files to `out/`, with the `/geeks-shop` base
 
 ## CI/CD and reporting
 
-The [Playwright workflow](.github/workflows/playwright.yml) runs on pushes and pull requests targeting main or develop, on a weekly schedule and on manual dispatch. A browser matrix runs Chromium, Firefox and WebKit separately.
+The [Playwright workflow](.github/workflows/playwright.yml) runs on pushes and pull requests targeting main or develop, on a weekly schedule and on manual dispatch. A browser matrix runs Chromium, Firefox and WebKit separately: functional tests on Ubuntu and visual regression tests on Windows Server 2022, matching the committed Windows baselines. Visual comparisons do not automatically update baselines.
 
 The configured reporters generate HTML, JSON and JUnit results. Screenshots and videos are retained on failure, and traces are captured on the first retry. The workflow uploads reports and test results as artifacts when available.
 
@@ -155,8 +155,8 @@ geeks-shop/
 ## Known limitations
 
 - The application is a static demo with mock data, not a transactional e-commerce backend.
-- No server-side REST API routes are present in the current source tree. Some tests in `tests/api/` still target `/api/products` and need alignment with the static architecture.
-- Visual snapshots are platform-specific; the committed Windows baselines may need corresponding Linux baselines for CI.
+- No server-side REST API routes are present. HTTP tests verify page responses, the absent API route, and the static catalog contract.
+- Visual snapshots are platform-specific; CI compares the committed Windows baselines on a Windows runner. Linux baselines are not included.
 - Automated accessibility checks do not establish full WCAG compliance.
 
 ## Related project
