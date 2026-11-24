@@ -1,0 +1,89 @@
+name: Import reviewed CI visual baselines
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/import-reviewed-baselines.yml'
+permissions:
+  contents: write
+  actions: write
+jobs:
+  import:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify source and download reviewed evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git diff --exit-code d1c3d01fe78d104da443fe6dbc72094bf6005344 HEAD -- src tests/visual playwright.config.ts package.json package-lock.json
+          for browser in chromium firefox webkit; do
+            gh run download 45322454699 --name "test-results-visual-$browser" --dir "$RUNNER_TEMP/reviewed/$browser"
+          done
+      - name: Import only reviewed and stable screenshots
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          hashes = {
+              "chromium": {
+                  "product-detail": "e23ecbf49d97159a86b7da0dc384cda2de24b9f5b353d03aaf9306c89683486d",
+                  "navbar-active-link": "056d0bfef7b13534667c848c4ad834ae9e096f7d0452ba90c85c99f0f563dc91",
+                  "product-card-hover": "85fe1f90ba775268962e6a8e7e21c17916be1f0339ab4a856ecf2501df247099",
+                  "featured-section": "d9f21a9c29a7bd5fa16d36ee1d895f44ca3c2be3aa2847b96c6bdc7248af3eb2",
+                  "product-image": "2ba0bd8bcf58e25694651a2659cdba708730ed2d4e9ea73daaf05b8f853ab1ec",
+                  "navbar": "611f5dc4c793c71e448c0520d39dc191f31a75aed2d7373199967bc8ff775642",
+              },
+              "firefox": {
+                  "product-detail": "bb8bc6671c8f00cee4a70ea54be5399192f43fba26a6c7bd166ba92a362b0692",
+                  "navbar-active-link": "e9e1bceef8ca2b4065766d9f9a3a32df2ca406aeca55f5180f03b5e744894aac",
+                  "product-card-hover": "df374e1299a10beb9b35f5d4b447da248e195402f919e3bd40513a3f533a1f9e",
+                  "featured-section": "c17fc003ce35f4750ddd2f68c8ae77eaaac994e3bc1d0cfcdb8507e2ffe9b22f",
+                  "product-image": "8a4e894fd64f0986f9ba5b3376a849f4a93693cab7e7b63ad28e8ae7a708941d",
+                  "navbar": "07d835c27d77165314c6b781e066b2cd92200a7a3fcb1a039b53fecb513e6e7e",
+              },
+              "webkit": {
+                  "product-price": "d65e3143b46bb56600d7b718ee01e8301fc523ea106374c49387ff6e47afa58e",
+                  "product-detail": "961b476e4c742511270e279aaab0d1694a0ad49bb9ff6a3e85f4b2e6c173541e",
+                  "navbar-active-link": "794898ca2b9799f841a0cfd0704ddec16033ae520556f97c5fd0484e3f5929b4",
+                  "product-card-hover": "7ab8319ad26830028cada6690fc0893417e88b93360deebc0b6a84af0221a9e7",
+                  "featured-section": "5722d50137fd940fb0432a3d1b2758d58756dc411141a2df0684e0fbed2b15e2",
+                  "product-image": "f8c9e45861405a4bb4596ab07bebdd3bbd9cc41a9f8ce4a539003adfb8a66f6b",
+                  "navbar": "908b774ee56f69fc3a7748cb12eeebefb5c3eafd3fe3b9669fe849eacba869da",
+              },
+          }
+          root = Path(os.environ["RUNNER_TEMP"]) / "reviewed"
+          snapshots = Path("tests/visual/visual.spec.ts-snapshots")
+          updates = []
+          for browser, cases in hashes.items():
+              for name, digest in cases.items():
+                  candidates = list((root / browser).rglob(f"{name}-actual.png"))
+                  assert len(candidates) == 2, (browser, name, candidates)
+                  assert all(hashlib.sha256(p.read_bytes()).hexdigest() == digest for p in candidates)
+                  original = next(p for p in candidates if "-retry" not in p.parent.name)
+                  target = snapshots / f"{name}-{browser}-win32.png"
+                  assert target.is_file(), target
+                  assert target.read_bytes() == original.with_name(f"{name}-expected.png").read_bytes(), target
+                  updates.append((target, original.read_bytes()))
+          assert len(updates) == 19
+          for target, data in updates:
+              target.write_bytes(data)
+              print(target)
+          PY
+      - name: Commit reviewed baselines and rerun strict Playwright tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/visual/visual.spec.ts-snapshots
+          git commit -m "test: refresh 19 reviewed Windows CI visual baselines"
+          git push origin HEAD:main
+          gh workflow run playwright.yml --ref main
